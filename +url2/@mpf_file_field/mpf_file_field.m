@@ -26,7 +26,7 @@ classdef mpf_file_field < handle
             
             in.file_name = '';
             in.content_type = '';
-            in = sl.in.processVarargin(in,varargin);
+            in = url2.sl.in.processVarargin(in,varargin);
             
             
             obj.name = name;
