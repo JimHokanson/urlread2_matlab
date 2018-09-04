@@ -22,6 +22,7 @@ classdef multipart_form_data < handle
     
     %For internal debugging - don't call
     [body,headers] = form.getBodyAndHeaders();
+    %Call char() on body to see it in more normal form ...
     
     %}
     
