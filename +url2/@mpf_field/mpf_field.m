@@ -94,7 +94,10 @@ classdef mpf_field < handle
                 error('Unhandled case')
             end
             
-            str = [str1 crlf value_string crlf];            
+            str = [str1 crlf value_string crlf];
+            
+            %This could be improved (done earlier)
+            str = uint8(str);
         end
     end
     

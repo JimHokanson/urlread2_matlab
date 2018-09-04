@@ -7,21 +7,21 @@ classdef multipart_form_data < handle
     
     
     %{
-    -H  "accept: application/json" -H  "authorization: Bearer token" -H 
-"Content-Type: multipart/form-data" -F "file=@Gax_EANs.csv;type="
-    
+
     form = url2.multipart_form_data();
     form.addField('first_name','Bob')
     file_path = '/Users/jim/Desktop/simple_file.txt';
     form.addFile('hi_mom',file_path,'file_name','my_file.txt');
     
     url = 'https://postman-echo.com/post';
-    
-    
-    
-    
     [output,extras] = urlread2(url, 'post', form)
         
+    %This just basically shows how postman interpreted the call
+    temp = jsondecode(output);
+    
+    
+    %For internal debugging - don't call
+    [body,headers] = form.getBodyAndHeaders();
     
     %}
     
@@ -68,14 +68,15 @@ classdef multipart_form_data < handle
             obj.fields{end+1} = temp;
         end
         function [body,headers] = getBodyAndHeaders(obj)
-            body = '';
+            body = uint8([]);
             for i = 1:length(obj.fields)
                 temp = obj.fields{i};
                 temp_body = temp.getBodyEntry(obj.boundary);
                 body = [body temp_body]; %#ok<AGROW>
             end
             
-            body = [body '--' obj.boundary '--'];
+            end_str = ['--' obj.boundary '--'];
+            body = [body uint8(end_str)];
             
             headers = struct();
             headers.name = 'Content-Type';

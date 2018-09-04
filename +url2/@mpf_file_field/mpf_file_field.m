@@ -35,7 +35,7 @@ classdef mpf_file_field < handle
             obj.file_name = in.file_name;
             obj.content_type = in.content_type;
         end
-       	function str = getBodyEntry(obj,boundary)
+       	function output = getBodyEntry(obj,boundary)
             crlf = char([13 10]);
 %             >> Content-Disposition: form-data; name="hi_mom"; filename="simple_file.txt"
 % >> Content-Type: text/plain
@@ -51,9 +51,24 @@ classdef mpf_file_field < handle
                 str2 = sprintf('%sContent-Type: %s%s',str2,obj.content_type,crlf);                
             end
             
-            value_string = fileread(obj.file_path);
+            lead_in_bytes = uint8([str1 str2 crlf]);
             
-            str = [str1 str2 crlf value_string crlf];            
+            [fid, msg] = fopen(obj.file_path);
+            if fid == -1
+                error(message('MATLAB:fileread:cannotOpenFile', obj.file_path, msg));
+            end
+
+            try
+                value_bytes = fread(fid,'*uint8')';
+            catch exception
+                fclose(fid);
+                throw(exception);
+            end
+
+            fclose(fid);
+            
+            output = [lead_in_bytes value_bytes uint8(crlf)];
+            
         end
     end
     

@@ -158,7 +158,7 @@ if isobject(body)
    %JAH: TODO
    body_obj = body;
    [body,headers] = body_obj.getBodyAndHeaders();
-   
+   headers_in = [headers_in headers];
 end
 
 for iHeader = 1:length(headers_in)
