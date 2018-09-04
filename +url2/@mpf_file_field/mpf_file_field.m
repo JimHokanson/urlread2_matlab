@@ -7,26 +7,53 @@ classdef mpf_file_field < handle
         name
         file_path
         file_name
+        content_type
     end
     
     methods
-        function obj = mpf_file_field(name,file_path,file_name)
+        function obj = mpf_file_field(name,file_path,varargin)
             %
-            %   obj = url2.mpf_file_field(name,file_path,file_name)
+            %   obj = url2.mpf_file_field(name,file_path,varargin)
+            %
+            %   Optional Inputs
+            %   ---------------
+            %   file_name :
+            %   content_type : 
+            %
+            %   See Also
+            %   --------
+            %   url2.multipart_form_data
+            
+            in.file_name = '';
+            in.content_type = '';
+            in = sl.in.processVarargin(in,varargin);
+            
             
             obj.name = name;
             %TODO: Check file existence ...
             obj.file_path = file_path;
-            obj.file_name = file_name;
+            obj.file_name = in.file_name;
+            obj.content_type = in.content_type;
         end
        	function str = getBodyEntry(obj,boundary)
             crlf = char([13 10]);
 %             >> Content-Disposition: form-data; name="hi_mom"; filename="simple_file.txt"
 % >> Content-Type: text/plain
             %TODO: This needs to be fixed ...
-            str1 = sprintf('--%s%s%s',boundary,crlf,crlf);
+            str1 = sprintf('--%s%s',boundary,crlf);
+            str2 = sprintf('Content-Disposition: form-data; name="%s";',obj.name);
+            if ~isempty(obj.file_name)
+                str2 = sprintf('%s filename="%s"%s',str2,obj.file_name,crlf);
+            else
+                str2 = sprintf('%s%s',str2,crlf);
+            end
+            if ~isempty(obj.content_type)
+                str2 = sprintf('%sContent-Type: %s%s',str2,obj.content_type,crlf);                
+            end
+            
             value_string = fileread(obj.file_path);
-            str = sprintf('%s%s%s',str1,value_string,crlf);
+            
+            str = [str1 str2 crlf value_string crlf];            
         end
     end
     

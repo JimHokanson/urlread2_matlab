@@ -93,7 +93,8 @@ classdef mpf_field < handle
             else
                 error('Unhandled case')
             end
-            str = sprintf('%s%s%s',str1,value_string,crlf);
+            
+            str = [str1 crlf value_string crlf];            
         end
     end
     

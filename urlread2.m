@@ -1,7 +1,7 @@
-function [output,extras] = urlread2(url_char,method,body,headersIn,varargin)
+function [output,extras] = urlread2(url_char,method,body,headers_in,varargin)
 %urlread2  Makes HTTP requests and processes response
 %
-%   [output,extras] = urlread2(url_char, *method, *body, *headersIn, varargin)
+%   [output,extras] = urlread2(url_char, *method, *body, *headers_in, varargin)
 %
 %   * indicates optional inputs that must be entered in place
 %
@@ -12,16 +12,16 @@ function [output,extras] = urlread2(url_char,method,body,headersIn,varargin)
 %   ... = urlread2(urlChar,'GET','',[],prop1,value1,prop2,value2,etc)
 %   ... = urlread2(urlChar,'POST',body,headers)
 %   
-%   FEATURES
-%   =======================================================================
+%   Features
+%   --------
 %   1) Allows specification of any HTTP method
 %   2) Allows specification of any header. Very little is hard-coded
 %      in for header handling.
 %   3) Returns response status and headers
 %   4) Should handle unicode properly ...
 %
-%   OUTPUTS
-%   =======================================================================
+%   Outputs
+%   -------
 %   output : body of the response, either text or binary depending upon
 %            CAST_OUTPUT property
 %   extras : (structure)
@@ -67,28 +67,35 @@ function [output,extras] = urlread2(url_char,method,body,headersIn,varargin)
 %       char is sent via unicode2native function with ENCODING input (see below)
 %       ** Note this code automadically sets the content-length header
 %          based on the input **
-%   headersIn : (structure array), use empty [] or '' if no headers are needed
-%                   but varargin property/value pairs are, multiple headers
-%                   may be passed in as a structure array
+%   headers_in : (structure array)
+%           Use [] or '' if no headers are needed
 %       .name    - (string), name of the header, a name property is used
 %                   instead of a field because the name must match a valid
 %                   header
 %       .value   - (string), value to use
 %
-%   OPTIONAL INPUTS (varargin, property/value pairs)
-%   =======================================================================
-%   CAST_OUTPUT      : (default true) output is uint8, useful if the body
-%                       of the response is not text
-%   ENCODING         : (default ''), ENCODING input to function unicode2native
-%   FOLLOW_REDIRECTS : (default true), if false 3xx status codes will
-%                       be returned and need to be handled by the user,
-%                       note this does not handle javascript or meta tag
-%                       redirects, just server based ones
-%   READ_TIMEOUT     : (default 0), 0 means no timeout, value is in
-%                       milliseconds
+%
+%   Optional Inputs (varargin, property/value pairs)
+%   -------------------------------------------------
+%   cast_output : (default true) 
+%       - true : Tries to convert output based on content type - this could
+%                be improved ...
+%       - false : output becomes a uint8 (byte) array
+%   encoding : string or logical (default '')
+%       If string, this is the input to unicode2native.
+%       - '' : uses default for unicode2native
+%       - false : just converts string to bytes, dropping high byte 
+%   follow_redirects : logical (default true)
+%       If false 3xx status codes will be returned and need to be handled
+%       by the user, note this does not handle javascript or meta tag
+%       redirects, just server based ones.
+%   read_timeout : (default 0), 
+%       - 0 means no timeout, value is in milliseconds
+%
 %
 %   EXAMPLES
 %   =======================================================================
+%
 %   GET:
 %   --------------------------------------------
 %   url    = 'http://www.mathworks.com/matlabcentral/fileexchange/';
@@ -116,10 +123,10 @@ function [output,extras] = urlread2(url_char,method,body,headersIn,varargin)
 %
 %   VERSION = 1.2
 
-in.CAST_OUTPUT      = true;
-in.FOLLOW_REDIRECTS = true;
-in.READ_TIMEOUT     = 0;
-in.ENCODING         = '';
+in.cast_output      = true;
+in.follow_redirects = true;
+in.read_timeout     = 0;
+in.encoding         = '';
 
 in = url2.sl.in.processVarargin(in,varargin);
 
@@ -128,7 +135,7 @@ in = url2.sl.in.processVarargin(in,varargin);
 
 if ~exist('method','var') || isempty(method), method = 'GET'; end
 if ~exist('body','var'), body = ''; end
-if ~exist('headersIn','var'), headersIn = []; end
+if ~exist('headersIn','var'), headers_in = []; end
 
 assert(usejava('jvm'),'Function requires Java')
 
@@ -144,11 +151,18 @@ urlConnection = getURLConnection(url_char);
 %SETTING PROPERTIES
 %-------------------------------------------------------
 urlConnection.setRequestMethod(upper(method));
-urlConnection.setFollowRedirects(in.FOLLOW_REDIRECTS);
-urlConnection.setReadTimeout(in.READ_TIMEOUT);
+urlConnection.setFollowRedirects(in.follow_redirects);
+urlConnection.setReadTimeout(in.read_timeout);
 
-for iHeader = 1:length(headersIn)
-    curHeader = headersIn(iHeader);
+if isobject(body)
+   %JAH: TODO
+   body_obj = body;
+   [body,headers] = body_obj.getBodyAndHeaders();
+   
+end
+
+for iHeader = 1:length(headers_in)
+    curHeader = headers_in(iHeader);
     urlConnection.setRequestProperty(curHeader.name,curHeader.value);
 end
 
@@ -165,8 +179,12 @@ if ~isempty(body)
 
     if ischar(body)
         %NOTE: '' defaults to Matlab's default encoding scheme 
-        body = unicode2native(body,in.ENCODING);
-    elseif ~(strcmp(class(body),'uint8') || strcmp(class(body),'int8'))
+        if islogical(in.encoding)
+            body = uint8(body);
+        else
+            body = unicode2native(body,in.encoding);
+        end
+    elseif ~(isa(body,'uint8') || isa(body,'int8'))
         error('Function input: body, should be of class char, uint8, or int8, detected: %s',class(body))
     end
     
@@ -254,7 +272,7 @@ isc.copyStream(inputStream,byteArrayOutputStream);
 inputStream.close;
 byteArrayOutputStream.close;     
 
-if in.CAST_OUTPUT
+if in.cast_output
     charset = '';
     
     %Extraction of character set from Content-Type header if possible

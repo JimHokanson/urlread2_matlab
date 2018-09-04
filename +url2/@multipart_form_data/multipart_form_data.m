@@ -10,13 +10,18 @@ classdef multipart_form_data < handle
     -H  "accept: application/json" -H  "authorization: Bearer token" -H 
 "Content-Type: multipart/form-data" -F "file=@Gax_EANs.csv;type="
     
-    f = url2.multipart_form_data();
-    f.addField('first_name','Bob')
+    form = url2.multipart_form_data();
+    form.addField('first_name','Bob')
     file_path = '/Users/jim/Desktop/simple_file.txt';
-    f.addFile('hi_mom',file_path,'file_name','my_file.txt');
+    form.addFile('hi_mom',file_path,'file_name','my_file.txt');
     
-    [body,headers] = f.getBodyAndHeaders();
+    url = 'https://postman-echo.com/post';
     
+    
+    
+    
+    [output,extras] = urlread2(url, 'post', form)
+        
     
     %}
     
@@ -37,11 +42,22 @@ classdef multipart_form_data < handle
             obj.boundary = in.boundary;
         end
         function addFile(obj,name,file_path,varargin)
+            %X Add file to the form
+            %
+            %   addFile(obj,name,file_path,varargin)
+            %
+            %   Optional Inputs
+            %   ---------------
+            %   file_name : string
+            %       Name of the file for the server.
+            %   content_type : string
+            %       Example 'text/plain' (text) or 'application/octet-stream' (binary
             
             in.file_name = '';
+            in.content_type = '';
             in = url2.sl.in.processVarargin(in,varargin);
 
-            temp = url2.mpf_file_field(name,file_path,in.file_name);
+            temp = url2.mpf_file_field(name,file_path,in);
             
             obj.fields{end+1} = temp;
             

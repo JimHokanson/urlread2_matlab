@@ -54,7 +54,8 @@ elseif isstruct(varargin{1})
     end
 elseif iscell(varargin)
     for iName = 1:2:length(varargin)
-       cur_name = varargin{iName};
+        %Added because of strange naming convention
+       cur_name = lower(varargin{iName});
        cur_value = varargin{iName+1};
        in.(cur_name) = cur_value;
     end
